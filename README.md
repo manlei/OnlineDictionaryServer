@@ -1,2 +1,3 @@
 # OnlineDictionaryServer
-The server of a Java project
+OnlineDictionary is a java project based on C/S architecture.
+This is the server.
