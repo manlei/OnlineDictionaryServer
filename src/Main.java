@@ -4,8 +4,6 @@
 public class Main {
     public static void main(String[] args) throws Exception{
         Server dicServer=new Server();
-        while(true) {
-            dicServer.readAMessage();
-        }
+        dicServer.Service();
     }
 }
