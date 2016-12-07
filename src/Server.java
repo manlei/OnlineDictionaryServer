@@ -9,7 +9,8 @@ import java.util.Collections;
  */
 public class Server {
     private int port=8000;
-    int id=0;
+    private int id=0;
+    private Database db;
     public Server() {
 
     }
@@ -19,15 +20,16 @@ public class Server {
     }
 
     public void Service() {
+        db=new Database();
         try {
             ServerSocket serverSocket = new ServerSocket(port);
             while (true) {
                 Socket socket = serverSocket.accept();
                 ++id;
-                new Thread(new ServerThread(socket,id)).start();
+                new Thread(new ServerThread(socket,id,db)).start();
             }
         }
-        catch(IOException ex) {
+        catch(Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -36,14 +38,17 @@ public class Server {
 class ServerThread implements Runnable {
     private Socket socket;
     private int id;
+    private Database db;
+    private Message request;
     //three translator
     protected ArrayList<Translator> t=new ArrayList<>(3);
     private ObjectInputStream objectFromClient;
     private ObjectOutputStream objectToClient;
 
-    public ServerThread(Socket socket,int id) {
+    public ServerThread(Socket socket,int id,Database db) {
         this.socket=socket;
         this.id=id;
+        this.db=db;
     }
 
     public void InitializeTranslator() {
@@ -82,52 +87,52 @@ class ServerThread implements Runnable {
     }
 
     public void readAMessage() throws Exception {
-        Message m=(Message)objectFromClient.readObject();
-        switch(m.type.charAt(0)) {
+        request=(Message)objectFromClient.readObject();
+        switch(request.type.charAt(0)) {
             //select translator
             case 's':
-                selectTranslator(m);
+                selectTranslator();
                 break;
             //query a word
             case 'q':
-                queryWord(m);
+                queryWord();
                 break;
             //vote a translator
             case 'v':
-                voteTranslator(m);
+                voteTranslator();
                 break;
             //log in
             case 'l':
-                login(m);
+                login();
                 break;
         }
     }
 
-    public void selectTranslator(Message m) {
+    public void selectTranslator() {
         // sync database
     }
 
-    public void queryWord(Message m) throws Exception {
+    public void queryWord() throws Exception {
         ArrayList<WORD> answer=new ArrayList<>(3);
         //read user's votes from database
         //read user's enable from database
         sortTranslator();
         if(t.get(0).isEnable)
-            answer.add(t.get(0).getTranslation(m.text));
+            answer.add(t.get(0).getTranslation(request.text));
         if(t.get(1).isEnable)
-            answer.add(t.get(1).getTranslation(m.text));
+            answer.add(t.get(1).getTranslation(request.text));
         if(t.get(2).isEnable)
-            answer.add(t.get(2).getTranslation(m.text));
+            answer.add(t.get(2).getTranslation(request.text));
         objectToClient.writeObject(answer);
         objectToClient.flush();
     }
 
-    public void voteTranslator(Message m) {
+    public void voteTranslator() {
         // TODO: 2016/11/25
         // sync database
     }
 
-    public void login(Message m) {
+    public void login() {
         // TODO: 2016/11/25
         // database operation
     }

@@ -37,6 +37,7 @@ public class BingTranslate extends Translator{
         while((line=br.readLine())!=null) {
             sb.append(line);
         }
+        //System.out.println(sb.toString());
 
         br.close();
         isr.close();
@@ -47,8 +48,14 @@ public class BingTranslate extends Translator{
         WORD wd=new WORD();
         wd.translator=name;
         wd.word=jsonObj.get("word").toString();
-        wd.usPhonetic=((JSONObject)jsonObj.get("pronunciation")).get("AmE").toString();
-        wd.ukPhonetic=((JSONObject)jsonObj.get("pronunciation")).get("BrE").toString();
+        if(((JSONObject)jsonObj.get("pronunciation")).get("AmE")!=null)
+            wd.usPhonetic=((JSONObject)jsonObj.get("pronunciation")).get("AmE").toString();
+        else
+            wd.usPhonetic="";
+        if(((JSONObject)jsonObj.get("pronunciation")).get("BrE")!=null)
+            wd.ukPhonetic=((JSONObject)jsonObj.get("pronunciation")).get("BrE").toString();
+        else
+            wd.ukPhonetic="";
         JSONArray defs=(JSONArray)(jsonObj.get("defs"));
         Iterator<Object> it=defs.iterator();
         while (it.hasNext()) {
