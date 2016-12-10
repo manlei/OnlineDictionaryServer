@@ -51,20 +51,13 @@ class ServerThread implements Runnable {
         this.db=db;
     }
 
-    public void InitializeTranslator() {
-        t.add(new BingTranslate(0));
-        t.add(new JinshanTranslate(0));
-        t.add(new YoudaoTranslate(0));
-    }
-
-    public void sortTranslator() {
-        Collections.sort(t);
-    }
     public void run() {
         System.out.println(id+" is running.");
 
         //Initialize translator
-        InitializeTranslator();
+        t.add(new BingTranslate(0));
+        t.add(new JinshanTranslate(0));
+        t.add(new YoudaoTranslate(0));
 
         try {
             objectFromClient = new ObjectInputStream(socket.getInputStream());
@@ -88,6 +81,7 @@ class ServerThread implements Runnable {
 
     public void readAMessage() throws Exception {
         request=(Message)objectFromClient.readObject();
+        System.out.println(request.toString());
         switch(request.type.charAt(0)) {
             //select translator
             case 's':
@@ -101,22 +95,53 @@ class ServerThread implements Runnable {
             case 'v':
                 voteTranslator();
                 break;
-            //log in
+            //login and logout
             case 'l':
-                login();
+                if(request.type.charAt(1)=='i')
+                    login();
+                else if(request.type.charAt(1)=='o')
+                    logout();
+                break;
+            case 'r':
+                register();
                 break;
         }
     }
 
     public void selectTranslator() {
-        // sync database
+        boolean enableBing=(request.text.charAt(0)-'0')!=0;
+        boolean enableJinshan=(request.text.charAt(1)-'0')!=0;
+        boolean enableYoudao=(request.text.charAt(2)-'0')!=0;
+        db.setEnableBing(request.clientName,enableBing);
+        db.setEnableJinshan(request.clientName,enableJinshan);
+        db.setEnableYoudao(request.clientName,enableYoudao);
     }
 
     public void queryWord() throws Exception {
         ArrayList<WORD> answer=new ArrayList<>(3);
         //read user's votes from database
         //read user's enable from database
-        sortTranslator();
+        if(!request.clientName.equals("null")) {
+            for(int i=0;i<3;++i) {
+                if(t.get(i).name.equals("Bing")) {
+                    t.get(i).isEnable=db.getEnableBing(request.clientName);
+                    t.get(i).votes=db.getBingVotes(request.clientName);
+                    //System.out.println(t.get(i).isEnable+"\t"+t.get(i).votes);
+                }
+                if(t.get(i).name.equals("Jinshan")) {
+                    t.get(i).isEnable=db.getEnableJinshan(request.clientName);
+                    t.get(i).votes=db.getJinshanVotes(request.clientName);
+                    //System.out.println(t.get(i).isEnable+"\t"+t.get(i).votes);
+                }
+                if(t.get(i).name.equals("Youdao")) {
+                    t.get(i).isEnable=db.getEnableYoudao(request.clientName);
+                    t.get(i).votes=db.getYoudaoVotes(request.clientName);
+                    //System.out.println(t.get(i).isEnable+"\t"+t.get(i).votes);
+                }
+            }
+            Collections.sort(t);
+        }
+
         if(t.get(0).isEnable)
             answer.add(t.get(0).getTranslation(request.text));
         if(t.get(1).isEnable)
@@ -128,12 +153,34 @@ class ServerThread implements Runnable {
     }
 
     public void voteTranslator() {
-        // TODO: 2016/11/25
-        // sync database
+        if(request.text.equals("Bing"))
+            db.voteBing(request.clientName);
+        if(request.text.equals("Jinshan"))
+            db.voteJinshan(request.clientName);
+        if(request.text.equals("Youdao"))
+            db.voteYoudao(request.clientName);
     }
 
-    public void login() {
-        // TODO: 2016/11/25
-        // database operation
+    public void login() throws Exception {
+        String args[]=request.text.split("\t");
+        boolean result=db.login(args[0],args[1]);
+        Message m=new Message(request.clientName,"rli",""+result);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
+    }
+
+    public void logout() throws Exception {
+        boolean result=db.logout(request.clientName);
+        Message m=new Message(request.clientName,"rlo",""+result);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
+    }
+
+    public void register() throws Exception {
+        String args[]=request.text.split("\t");
+        boolean result=db.addUser(args[0],args[1]);
+        Message m=new Message(request.clientName,"rr",""+result);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
     }
 }

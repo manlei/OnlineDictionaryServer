@@ -7,9 +7,9 @@ public abstract class Translator implements Comparable{
     int votes;
     boolean isEnable;
     public int compareTo(Object t) {
-        if(votes>((Translator)t).votes)
+        if(votes<((Translator)t).votes)
             return 1;
-        else if(votes<((Translator)t).votes)
+        else if(votes>((Translator)t).votes)
             return -1;
         else
             return 0;

@@ -36,9 +36,9 @@ public class Database {
         try {
             PreparedStatement pstmt=conn.prepareStatement(sql);
             ResultSet rs=pstmt.executeQuery();
-            pstmt.close();
             if(rs.next())
                 result=true;
+            pstmt.close();
         }
         catch(Exception ex) {
             ex.printStackTrace();
@@ -103,7 +103,6 @@ public class Database {
             PreparedStatement pstmt;
             pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
-            pstmt.close();
             if(rs.next()) {
                 String update="update User set STATE='1' where NAME='" + name + "'";
                 if(stmt.executeUpdate(update)>0) {
@@ -146,7 +145,6 @@ public class Database {
             String query = "select BING from User where NAME='"+name+"'";
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
-            pstmt.close();
             if(rs.next()) {
                 int num=Integer.parseInt(rs.getString("BING"));
                 num++;
@@ -167,7 +165,6 @@ public class Database {
             String query = "select JINSHAN from User where NAME='"+name+"'";
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
-            pstmt.close();
             if(rs.next()) {
                 int num=Integer.parseInt(rs.getString("JINSHAN"));
                 num++;
@@ -188,7 +185,6 @@ public class Database {
             String query = "select YOUDAO from User where NAME='"+name+"'";
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
-            pstmt.close();
             if(rs.next()) {
                 int num=Integer.parseInt(rs.getString("YOUDAO"));
                 num++;
@@ -211,7 +207,6 @@ public class Database {
             String query = "select BING from User where NAME='"+name+"'";
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
-            pstmt.close();
             if(rs.next()) {
                 result = Integer.parseInt(rs.getString("BING"));
             }
@@ -227,7 +222,6 @@ public class Database {
             String query = "select JINSHAN from User where NAME='"+name+"'";
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
-            pstmt.close();
             if(rs.next()) {
                 result = Integer.parseInt(rs.getString("JINSHAN"));
             }
@@ -243,9 +237,110 @@ public class Database {
             String query = "select YOUDAO from User where NAME='"+name+"'";
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
-            pstmt.close();
             if(rs.next()) {
                 result = Integer.parseInt(rs.getString("YOUDAO"));
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return result;
+    }
+
+    public boolean setEnableBing(String name,boolean arg) {
+        boolean result=false;
+        try {
+            if(judgeUserExist(name)) {
+                int enable=arg==true?1:0;
+                String update = "update User set ENABLE_BING ='"+enable+"' where NAME='"+name+"'";
+                if(stmt.executeUpdate(update)>0) {
+                    result=true;
+                }
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return result;
+    }
+
+    public boolean setEnableJinshan(String name,boolean arg) {
+        boolean result=false;
+        try {
+            if(judgeUserExist(name)) {
+                int enable=arg==true?1:0;
+                String update = "update User set ENABLE_JINSHAN ='"+enable+"' where NAME='"+name+"'";
+                if(stmt.executeUpdate(update)>0) {
+                    result=true;
+                }
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return result;
+    }
+
+    public boolean setEnableYoudao(String name,boolean arg) {
+        boolean result=false;
+        try {
+            if(judgeUserExist(name)) {
+                int enable=arg==true?1:0;
+                String update = "update User set ENABLE_YOUDAO ='"+enable+"' where NAME='"+name+"'";
+                if(stmt.executeUpdate(update)>0) {
+                    result=true;
+                }
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return result;
+    }
+
+    public boolean getEnableBing(String name) {
+        boolean result=false;
+        try {
+            String query = "select ENABLE_BING from User where NAME='"+name+"'";
+            PreparedStatement pstmt=conn.prepareStatement(query);
+            ResultSet rs=pstmt.executeQuery();
+            if(rs.next()) {
+                int enable=Integer.parseInt(rs.getString("ENABLE_BING"));
+                result=enable==0?false:true;
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return result;
+    }
+
+    public boolean getEnableJinshan(String name) {
+        boolean result=false;
+        try {
+            String query = "select ENABLE_JINSHAN from User where NAME='"+name+"'";
+            PreparedStatement pstmt=conn.prepareStatement(query);
+            ResultSet rs=pstmt.executeQuery();
+            if(rs.next()) {
+                int enable=Integer.parseInt(rs.getString("ENABLE_JINSHAN"));
+                result=enable==0?false:true;
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return result;
+    }
+
+    public boolean getEnableYoudao(String name) {
+        boolean result=false;
+        try {
+            String query = "select ENABLE_YOUDAO from User where NAME='"+name+"'";
+            PreparedStatement pstmt=conn.prepareStatement(query);
+            ResultSet rs=pstmt.executeQuery();
+            if(rs.next()) {
+                int enable=Integer.parseInt(rs.getString("ENABLE_YOUDAO"));
+                result=enable==0?false:true;
             }
         }
         catch (Exception ex) {
