@@ -102,8 +102,13 @@ class ServerThread implements Runnable {
                 else if(request.type.charAt(1)=='o')
                     logout();
                 break;
+            //register
             case 'r':
                 register();
+                break;
+            //other online users
+            case 'u':
+                getOnlineUsers();
                 break;
         }
     }
@@ -180,6 +185,13 @@ class ServerThread implements Runnable {
         String args[]=request.text.split("\t");
         boolean result=db.addUser(args[0],args[1]);
         Message m=new Message(request.clientName,"rr",""+result);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
+    }
+
+    public void getOnlineUsers() throws Exception {
+        String result=db.getOnlineUsers(request.clientName);
+        Message m=new Message(request.clientName,"ru",""+result);
         objectToClient.writeObject(m);
         objectToClient.flush();
     }

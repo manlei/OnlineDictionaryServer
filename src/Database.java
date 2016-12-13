@@ -208,7 +208,8 @@ public class Database {
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
             if(rs.next()) {
-                result = Integer.parseInt(rs.getString("BING"));
+                result=rs.getInt("BING");
+                //result = Integer.parseInt(rs.getString("BING"));
             }
         }
         catch (Exception ex) {
@@ -223,7 +224,8 @@ public class Database {
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
             if(rs.next()) {
-                result = Integer.parseInt(rs.getString("JINSHAN"));
+                result=rs.getInt("JINSHAN");
+                //result = Integer.parseInt(rs.getString("JINSHAN"));
             }
         }
         catch (Exception ex) {
@@ -238,7 +240,8 @@ public class Database {
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
             if(rs.next()) {
-                result = Integer.parseInt(rs.getString("YOUDAO"));
+                result=rs.getInt("YOUDAO");
+                //result = Integer.parseInt(rs.getString("YOUDAO"));
             }
         }
         catch (Exception ex) {
@@ -305,8 +308,9 @@ public class Database {
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
             if(rs.next()) {
-                int enable=Integer.parseInt(rs.getString("ENABLE_BING"));
-                result=enable==0?false:true;
+                result=rs.getBoolean("ENABLE_BING");
+                //int enable=Integer.parseInt(rs.getString("ENABLE_BING"));
+                //result=enable==0?false:true;
             }
         }
         catch (Exception ex) {
@@ -322,8 +326,9 @@ public class Database {
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
             if(rs.next()) {
-                int enable=Integer.parseInt(rs.getString("ENABLE_JINSHAN"));
-                result=enable==0?false:true;
+                result=rs.getBoolean("ENABLE_JINSHAN");
+                //int enable=Integer.parseInt(rs.getString("ENABLE_JINSHAN"));
+                //result=enable==0?false:true;
             }
         }
         catch (Exception ex) {
@@ -339,8 +344,10 @@ public class Database {
             PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
             if(rs.next()) {
-                int enable=Integer.parseInt(rs.getString("ENABLE_YOUDAO"));
-                result=enable==0?false:true;
+                result=rs.getBoolean("ENABLE_YOUDAO");
+
+                //int enable=Integer.parseInt(rs.getString("ENABLE_YOUDAO"));
+                //result=enable==0?false:true;
             }
         }
         catch (Exception ex) {
@@ -348,4 +355,22 @@ public class Database {
         }
         return result;
     }
+
+    public String getOnlineUsers(String name) {
+        StringBuilder sb=new StringBuilder();
+        try {
+            String query="select NAME from User where state='1' && NAME!='"+name+"'";
+            PreparedStatement pstmt=conn.prepareStatement(query);
+            ResultSet rs=pstmt.executeQuery();
+            while(rs.next()) {
+                sb.append(rs.getString("NAME"));
+                sb.append('\t');
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return sb.toString();
+    }
+
 }
