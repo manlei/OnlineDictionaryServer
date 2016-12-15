@@ -1,8 +1,8 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * Created by Eric on 2016/11/25.
@@ -11,22 +11,25 @@ public class Server {
     private int port=8000;
     private int id=0;
     private Database db;
+    //private LinkedBlockingQueue<Transfer> transfers;
+    private List<Transfer> transfers;
+    private String defaultPath="d:\\ODS\\";
     public Server() {
 
     }
 
-    public Server(int port) {
-        this.port=port;
-    }
-
     public void Service() {
         db=new Database();
+        transfers=Collections.synchronizedList(new ArrayList<Transfer>());//shared by all threads
+        File defaultDir=new File(defaultPath);
+        if(!defaultDir.exists())
+            defaultDir.mkdirs();
         try {
             ServerSocket serverSocket = new ServerSocket(port);
             while (true) {
                 Socket socket = serverSocket.accept();
                 ++id;
-                new Thread(new ServerThread(socket,id,db)).start();
+                new Thread(new ServerThread(socket,id,db,transfers,defaultPath)).start();
             }
         }
         catch(Exception ex) {
@@ -39,16 +42,22 @@ class ServerThread implements Runnable {
     private Socket socket;
     private int id;
     private Database db;
+    private List<Transfer> transfers;
     private Message request;
+    private String defaultPath;
+    private Transfer currentTransfer;
     //three translator
     protected ArrayList<Translator> t=new ArrayList<>(3);
     private ObjectInputStream objectFromClient;
     private ObjectOutputStream objectToClient;
 
-    public ServerThread(Socket socket,int id,Database db) {
+    public ServerThread(Socket socket,int id,Database db,List<Transfer> transfers,String defaultPath) {
         this.socket=socket;
         this.id=id;
         this.db=db;
+        this.transfers=transfers;
+        this.defaultPath=defaultPath;
+        currentTransfer=null;
     }
 
     public void run() {
@@ -64,6 +73,10 @@ class ServerThread implements Runnable {
             objectToClient = new ObjectOutputStream(socket.getOutputStream());
             while (true) {
                 readAMessage();
+                if(currentTransfer==null)
+                    setCurrentTransfer();
+                if(currentTransfer!=null)
+                    askClientToReceive();
             }
         }
         catch (Exception ex) {
@@ -77,6 +90,29 @@ class ServerThread implements Runnable {
             }
         }
         System.out.println(id+" is over.");
+    }
+
+    private void setCurrentTransfer() {
+        synchronized (transfers) {
+            for(int i=0;i<transfers.size();++i) {
+                Transfer temp=transfers.get(i);
+                if(temp.receiver.isEmpty())
+                    transfers.remove(i);
+                else {
+                    if (temp.receiver.contains(request.clientName)) {
+                        temp.receiver.remove(request.clientName);
+                        currentTransfer = temp;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private void askClientToReceive() throws Exception {
+        Message m=new Message(request.clientName,"trf",currentTransfer.sender);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
     }
 
     public void readAMessage() throws Exception {
@@ -110,6 +146,14 @@ class ServerThread implements Runnable {
             case 'u':
                 getOnlineUsers();
                 break;
+            //send a picture
+            case 't':
+                if(request.type.charAt(1)=='s')
+                    handleSend();
+                else if(request.type.charAt(1)=='r')
+                    handleReceive();
+
+
         }
     }
 
@@ -153,6 +197,10 @@ class ServerThread implements Runnable {
             answer.add(t.get(1).getTranslation(request.text));
         if(t.get(2).isEnable)
             answer.add(t.get(2).getTranslation(request.text));
+        boolean result=true;
+        Message m=new Message(request.clientName,"rq",""+result);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
         objectToClient.writeObject(answer);
         objectToClient.flush();
     }
@@ -195,4 +243,67 @@ class ServerThread implements Runnable {
         objectToClient.writeObject(m);
         objectToClient.flush();
     }
+
+
+    public void handleSend() throws Exception {
+
+        Transfer temp=new Transfer();
+        temp.sender=request.clientName;
+        StringTokenizer st=new StringTokenizer(request.text);
+        Set<String> allReceivers=new HashSet<>();
+        while(st.hasMoreElements()) {
+            allReceivers.add(st.nextToken());
+        }
+        temp.receiver=allReceivers;
+        SimpleDateFormat sdf=new SimpleDateFormat("yyyymmddHHmmss");
+        String filename=request.clientName+sdf.format(new Date());
+        temp.toTransfered=new File(defaultPath+filename+".jpg");
+
+        //reply to client : transfer can start
+        Message m=new Message(request.clientName,"rts",""+Boolean.TRUE);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
+
+        //start receive the file data from the client
+
+        FileOutputStream fos=new FileOutputStream(temp.toTransfered);
+        LinkedList<FileFrag> fileData=(LinkedList<FileFrag>)objectFromClient.readObject();
+        for(int i=0;i<fileData.size();i++) {
+            fos.write(fileData.get(i).Bytes,0,fileData.get(i).length);
+            fos.flush();
+        }
+
+        if(fos!=null)
+            fos.close();
+
+        transfers.add(temp);
+    }
+
+    public void handleReceive() throws Exception {
+        boolean will=Boolean.parseBoolean(request.text);
+        if(will) {
+            //reply to client : transfer will start
+            Message m=new Message(request.clientName,"rtr",""+currentTransfer.sender);
+            objectToClient.writeObject(m);
+            objectToClient.flush();
+
+            //start send the file data to the client
+            LinkedList<FileFrag> fileData=new LinkedList<>();
+            FileInputStream fis=new FileInputStream(currentTransfer.toTransfered);
+            byte[] sendBytes=new byte[1024];
+            int length=0;
+            while((length=fis.read(sendBytes,0,sendBytes.length))>0) {
+                fileData.add(new FileFrag(sendBytes,length));
+            }
+            objectToClient.writeObject(fileData);
+            objectToClient.flush();
+
+            if(fis!=null)
+                fis.close();
+
+        }
+
+        currentTransfer=null;
+    }
+
 }
