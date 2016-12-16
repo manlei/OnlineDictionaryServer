@@ -5,6 +5,7 @@ import org.json.simple.parser.JSONParser;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Iterator;
 
 /**
  * Created by Eric on 2016/11/25.
@@ -41,6 +42,7 @@ public class YoudaoTranslate extends Translator{
         while((line=br.readLine())!=null) {
             sb.append(line);
         }
+        //System.out.println(sb.toString());
 
         bw.close();
         osw.close();
@@ -49,18 +51,52 @@ public class YoudaoTranslate extends Translator{
         isr.close();
         is.close();
 
+
         //resolve json
-        JSONObject jsonObj=(JSONObject)new JSONParser().parse(sb.toString());
-        JSONObject basic=(JSONObject)jsonObj.get("basic");
         WORD wd=new WORD();
         wd.translator=name;
         wd.word=text;
-        wd.usPhonetic=basic.get("us-phonetic").toString();
-        wd.ukPhonetic=basic.get("uk-phonetic").toString();
-        JSONArray explains=(JSONArray) basic.get("explains");
-        for(int i=0;i<explains.size();++i) {
-            wd.explains.add(explains.get(i).toString());
+        JSONObject jsonObj=(JSONObject)new JSONParser().parse(sb.toString());
+        //basic meanings
+        if(jsonObj.get("basic")==null) {
+            wd.usPhonetic="";
+            wd.ukPhonetic="";
         }
+        else {
+            JSONObject basic = (JSONObject) jsonObj.get("basic");
+            if(basic.get("us-phonetic")!=null)
+                wd.usPhonetic = basic.get("us-phonetic").toString();
+            else
+                wd.usPhonetic="";
+            if(basic.get("uk-phonetic")!=null)
+                wd.ukPhonetic = basic.get("uk-phonetic").toString();
+            else
+                wd.ukPhonetic="";
+            JSONArray explains = (JSONArray) basic.get("explains");
+            for (int i = 0; i < explains.size(); ++i) {
+                wd.explains.add(explains.get(i).toString());
+            }
+        }
+        //web meanings
+        if(jsonObj.get("web")!=null) {
+            JSONArray web = (JSONArray) jsonObj.get("web");
+            for(int i=0;i<web.size();++i) {
+                JSONObject item=(JSONObject)web.get(i);
+                String temp=item.get("key").toString().toLowerCase();
+                if(temp.equals(text.toLowerCase())) {
+                    JSONArray values=(JSONArray)item.get("value");
+                    StringBuilder entry=new StringBuilder();
+                    entry.append("Web ");
+                    for(int j=0;j<values.size();++j) {
+                        entry.append(values.get(j).toString()+"；");
+                    }
+                    wd.explains.add(entry.toString());
+                }
+            }
+        }
+        if(wd.explains.isEmpty())
+            wd.explains.add("无法查到此单词");
+        System.out.println(wd);
         return wd;
     }
 }

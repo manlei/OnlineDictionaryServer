@@ -37,10 +37,12 @@ public class JinshanTranslate extends Translator{
         while((line=br.readLine())!=null) {
             sb.append(line);
         }
+        //System.out.println(sb.toString());
 
         br.close();
         isr.close();
         is.close();
+
 
         //resolve json
         WORD wd=new WORD();
@@ -48,19 +50,30 @@ public class JinshanTranslate extends Translator{
         wd.word=text;
         JSONObject jsonObj=(JSONObject)new JSONParser().parse(sb.toString());
         JSONObject symbols=(JSONObject)((JSONArray) jsonObj.get("symbols")).get(0);
-        wd.usPhonetic=symbols.get("ph_am").toString();
-        wd.ukPhonetic=symbols.get("ph_en").toString();
-        JSONArray parts=(JSONArray)symbols.get("parts");
-        Iterator<Object> it=parts.iterator();
-        while (it.hasNext()) {
-            JSONObject jsonTemp=(JSONObject)it.next();
-            StringBuilder entry=new StringBuilder(jsonTemp.get("part").toString()+" ");
-            JSONArray means=(JSONArray)jsonTemp.get("means");
-            for(int i=0;i<means.size();++i) {
-                entry.append(means.get(i)+";");
+        if(symbols.get("ph_am")==null)
+            wd.usPhonetic="";
+        else
+            wd.usPhonetic=symbols.get("ph_am").toString();
+        if(symbols.get("ph_en")==null)
+            wd.ukPhonetic="";
+        else
+            wd.ukPhonetic=symbols.get("ph_en").toString();
+        if(symbols.get("parts")==null)
+            wd.explains.add("无法查到此单词");
+        else {
+            JSONArray parts = (JSONArray) symbols.get("parts");
+            Iterator<Object> it = parts.iterator();
+            while (it.hasNext()) {
+                JSONObject jsonTemp = (JSONObject) it.next();
+                StringBuilder entry = new StringBuilder(jsonTemp.get("part").toString() + " ");
+                JSONArray means = (JSONArray) jsonTemp.get("means");
+                for (int i = 0; i < means.size(); ++i) {
+                    entry.append(means.get(i) + ";");
+                }
+                wd.explains.add(entry.toString());
             }
-            wd.explains.add(entry.toString());
         }
+        System.out.println(wd);
         return wd;
     }
 }

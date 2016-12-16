@@ -30,17 +30,34 @@ public class Database {
     }
 
     //judge a user whether exists
-    public boolean judgeUserExist(String name) {
-        String sql="select * from User where NAME='"+name+"'";
+    private boolean judgeUserExist(String name) {
+        String query="select * from User where NAME='"+name+"'";
         boolean result=false;
         try {
-            PreparedStatement pstmt=conn.prepareStatement(sql);
+            PreparedStatement pstmt=conn.prepareStatement(query);
             ResultSet rs=pstmt.executeQuery();
             if(rs.next())
                 result=true;
             pstmt.close();
         }
         catch(Exception ex) {
+            ex.printStackTrace();
+        }
+        return result;
+    }
+
+    //judge a user whether online
+    private boolean judgeUserOnline(String name) {
+        boolean result=false;
+        String query="select * from User where NAME='"+name+"'&& STATE='1'";
+        try {
+            PreparedStatement pstmt= conn.prepareStatement(query);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next())
+                result=true;
+            pstmt.close();
+        }
+        catch (Exception ex) {
             ex.printStackTrace();
         }
         return result;
@@ -81,40 +98,61 @@ public class Database {
     }
 
     //modify password
-    public boolean modifyPassword(String name,String pass,String newPass) {
+    public String modifyPassword(String name,String pass,String newPass) {
         boolean result=false;
-        try {
-            String update="update User set PASS='"+newPass+"' where NAME='"+name+"'&& PASS='"+pass+"'";
-            if(stmt.executeUpdate(update)>0) {
-                result=true;
+        StringBuilder sb=new StringBuilder();
+        if(judgeUserOnline(name))
+            sb.append("AO");
+        else {
+            try {
+                String update = "update User set PASS='" + newPass + "' where NAME='" + name + "'&& PASS='" + pass + "'";
+                if (stmt.executeUpdate(update) > 0) {
+                    sb.append("MS");
+                    result = true;
+                }
+                else {
+                    sb.append("WI");
+                }
+            }
+            catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return result;
+        sb.append('\t');
+        sb.append(result);
+        return sb.toString();
     }
 
     //login
-    public boolean login(String name,String pass) {
+    public String login(String name,String pass) {
         boolean result=false;
-        try {
-            String query = "select * from User where NAME='"+name+"'&& PASS='"+pass+"'";
-            PreparedStatement pstmt;
-            pstmt=conn.prepareStatement(query);
-            ResultSet rs=pstmt.executeQuery();
-            if(rs.next()) {
-                String update="update User set STATE='1' where NAME='" + name + "'";
-                if(stmt.executeUpdate(update)>0) {
-                    //login successfully
-                    result = true;
+        StringBuilder sb=new StringBuilder();
+        if(judgeUserOnline(name))
+            sb.append("AO");
+        else {
+            try {
+                String query = "select * from User where NAME='" + name + "'&& PASS='" + pass + "'";
+                PreparedStatement pstmt = conn.prepareStatement(query);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    String update = "update User set STATE='1' where NAME='" + name + "'";
+                    if (stmt.executeUpdate(update) > 0) {
+                        //login successfully
+                        sb.append("LS");
+                        result = true;
+                    }
+                }
+                else {
+                    sb.append("WI");
                 }
             }
+            catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return result;
+        sb.append('\t');
+        sb.append(result);
+        return sb.toString();
     }
 
     //logout

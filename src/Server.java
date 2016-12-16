@@ -1,3 +1,4 @@
+import javax.swing.filechooser.FileSystemView;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,7 +14,8 @@ public class Server {
     private Database db;
     //private LinkedBlockingQueue<Transfer> transfers;
     private List<Transfer> transfers;
-    private String defaultPath="d:\\ODS\\";
+    private String defaultPath= FileSystemView.getFileSystemView().getHomeDirectory().getAbsolutePath()+File.separator+
+            "ODS"+File.separator;
     public Server() {
 
     }
@@ -115,7 +117,7 @@ class ServerThread implements Runnable {
         objectToClient.flush();
     }
 
-    public void readAMessage() throws Exception {
+    private void readAMessage() throws Exception {
         request=(Message)objectFromClient.readObject();
         System.out.println(request.toString());
         switch(request.type.charAt(0)) {
@@ -146,18 +148,27 @@ class ServerThread implements Runnable {
             case 'u':
                 getOnlineUsers();
                 break;
-            //send a picture
+            //send a file
             case 't':
                 if(request.type.charAt(1)=='s')
                     handleSend();
                 else if(request.type.charAt(1)=='r')
                     handleReceive();
-
+                break;
+            //client close
+            case 'c':
+                close();
+                break;
+            //modify
+            case 'm':
+                if(request.type.charAt(1)=='p')
+                    modifyPassword();
+                break;
 
         }
     }
 
-    public void selectTranslator() {
+    private void selectTranslator() {
         boolean enableBing=(request.text.charAt(0)-'0')!=0;
         boolean enableJinshan=(request.text.charAt(1)-'0')!=0;
         boolean enableYoudao=(request.text.charAt(2)-'0')!=0;
@@ -166,7 +177,7 @@ class ServerThread implements Runnable {
         db.setEnableYoudao(request.clientName,enableYoudao);
     }
 
-    public void queryWord() throws Exception {
+    private void queryWord() throws Exception {
         ArrayList<WORD> answer=new ArrayList<>(3);
         //read user's votes from database
         //read user's enable from database
@@ -205,7 +216,7 @@ class ServerThread implements Runnable {
         objectToClient.flush();
     }
 
-    public void voteTranslator() {
+    private void voteTranslator() {
         if(request.text.equals("Bing"))
             db.voteBing(request.clientName);
         if(request.text.equals("Jinshan"))
@@ -214,22 +225,30 @@ class ServerThread implements Runnable {
             db.voteYoudao(request.clientName);
     }
 
-    public void login() throws Exception {
+    private void login() throws Exception {
         String args[]=request.text.split("\t");
-        boolean result=db.login(args[0],args[1]);
-        Message m=new Message(request.clientName,"rli",""+result);
+        String result=db.login(args[0],args[1]);
+        Message m=new Message(request.clientName,"rli",result);
         objectToClient.writeObject(m);
         objectToClient.flush();
     }
 
-    public void logout() throws Exception {
+    private void modifyPassword() throws Exception {
+        String args[]=request.text.split("\t");
+        String result=db.modifyPassword(args[0],args[1],args[2]);
+        Message m=new Message(request.clientName,"rmp",result);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
+    }
+
+    private void logout() throws Exception {
         boolean result=db.logout(request.clientName);
         Message m=new Message(request.clientName,"rlo",""+result);
         objectToClient.writeObject(m);
         objectToClient.flush();
     }
 
-    public void register() throws Exception {
+    private void register() throws Exception {
         String args[]=request.text.split("\t");
         boolean result=db.addUser(args[0],args[1]);
         Message m=new Message(request.clientName,"rr",""+result);
@@ -237,7 +256,7 @@ class ServerThread implements Runnable {
         objectToClient.flush();
     }
 
-    public void getOnlineUsers() throws Exception {
+    private void getOnlineUsers() throws Exception {
         String result=db.getOnlineUsers(request.clientName);
         Message m=new Message(request.clientName,"ru",""+result);
         objectToClient.writeObject(m);
@@ -245,7 +264,7 @@ class ServerThread implements Runnable {
     }
 
 
-    public void handleSend() throws Exception {
+    private void handleSend() throws Exception {
 
         Transfer temp=new Transfer();
         temp.sender=request.clientName;
@@ -279,7 +298,7 @@ class ServerThread implements Runnable {
         transfers.add(temp);
     }
 
-    public void handleReceive() throws Exception {
+    private void handleReceive() throws Exception {
         boolean will=Boolean.parseBoolean(request.text);
         if(will) {
             //reply to client : transfer will start
@@ -304,6 +323,12 @@ class ServerThread implements Runnable {
         }
 
         currentTransfer=null;
+    }
+
+    private void close() throws Exception {
+        Message m=new Message(request.clientName,"rc",""+Boolean.TRUE);
+        objectToClient.writeObject(m);
+        objectToClient.flush();
     }
 
 }

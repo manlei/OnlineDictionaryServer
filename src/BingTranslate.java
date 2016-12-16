@@ -43,26 +43,39 @@ public class BingTranslate extends Translator{
         isr.close();
         is.close();
 
+
         //resolve json
-        JSONObject jsonObj=(JSONObject)new JSONParser().parse(sb.toString());
         WORD wd=new WORD();
         wd.translator=name;
-        wd.word=jsonObj.get("word").toString();
-        if(((JSONObject)jsonObj.get("pronunciation")).get("AmE")!=null)
-            wd.usPhonetic=((JSONObject)jsonObj.get("pronunciation")).get("AmE").toString();
-        else
+        wd.word=text;
+        JSONObject jsonObj=(JSONObject)new JSONParser().parse(sb.toString());
+        if(jsonObj.get("pronunciation")==null) {
             wd.usPhonetic="";
-        if(((JSONObject)jsonObj.get("pronunciation")).get("BrE")!=null)
-            wd.ukPhonetic=((JSONObject)jsonObj.get("pronunciation")).get("BrE").toString();
-        else
             wd.ukPhonetic="";
-        JSONArray defs=(JSONArray)(jsonObj.get("defs"));
-        Iterator<Object> it=defs.iterator();
-        while (it.hasNext()) {
-            JSONObject jsonTemp=(JSONObject)it.next();
-            String entry=jsonTemp.get("pos").toString()+" "+jsonTemp.get("def");
-            wd.explains.add(entry);
         }
+        else {
+            JSONObject pron=(JSONObject) jsonObj.get("pronunciation");
+            if (pron.get("AmE") != null)
+                wd.usPhonetic = pron.get("AmE").toString();
+            else
+                wd.usPhonetic = "";
+            if (pron.get("BrE") != null)
+                wd.ukPhonetic = pron.get("BrE").toString();
+            else
+                wd.ukPhonetic = "";
+        }
+        if(jsonObj.get("defs")==null)
+            wd.explains.add("无法查到此单词");
+        else {
+            JSONArray defs = (JSONArray) (jsonObj.get("defs"));
+            Iterator<Object> it = defs.iterator();
+            while (it.hasNext()) {
+                JSONObject jsonTemp = (JSONObject) it.next();
+                String entry = jsonTemp.get("pos").toString() + " " + jsonTemp.get("def");
+                wd.explains.add(entry);
+            }
+        }
+        System.out.println(wd);
         return wd;
     }
 }
