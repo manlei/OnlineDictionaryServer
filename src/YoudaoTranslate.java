@@ -10,6 +10,10 @@ import java.util.Iterator;
 /**
  * Created by Eric on 2016/11/25.
  */
+/*
+class YoudaoTranslate
+    get and resolve the data Youdao API provided.
+ */
 public class YoudaoTranslate extends Translator{
     public YoudaoTranslate(int votes) {
         name="Youdao";

@@ -3,7 +3,10 @@ import java.io.Serializable;
 /**
  * Created by Eric on 2016/11/26.
  */
-// client request message
+/*
+class Message
+    define the message format between the client and the server.
+ */
 public class Message implements Serializable {
     public String clientName;
     public String type;

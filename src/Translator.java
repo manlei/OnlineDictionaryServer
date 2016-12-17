@@ -1,7 +1,10 @@
 /**
  * Created by Eric on 2016/11/25.
  */
-//the abstract class of translator
+/*
+class Translator
+    the abstract class of translators.
+ */
 public abstract class Translator implements Comparable{
     String name;
     int votes;

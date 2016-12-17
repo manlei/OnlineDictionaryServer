@@ -8,10 +8,14 @@ import java.util.*;
 /**
  * Created by Eric on 2016/11/25.
  */
+/*
+class Server
+    the main class of the server.
+    connect to the client and establish work thread.
+ */
 public class Server {
     private int port=8000;
     private int id=0;
-    private Database db;
     //private LinkedBlockingQueue<Transfer> transfers;
     private List<Transfer> transfers;
     private String defaultPath= FileSystemView.getFileSystemView().getHomeDirectory().getAbsolutePath()+File.separator+
@@ -21,7 +25,6 @@ public class Server {
     }
 
     public void Service() {
-        db=new Database();
         transfers=Collections.synchronizedList(new ArrayList<Transfer>());//shared by all threads
         File defaultDir=new File(defaultPath);
         if(!defaultDir.exists())
@@ -31,7 +34,7 @@ public class Server {
             while (true) {
                 Socket socket = serverSocket.accept();
                 ++id;
-                new Thread(new ServerThread(socket,id,db,transfers,defaultPath)).start();
+                new Thread(new ServerTask(socket,id,transfers,defaultPath)).start();
             }
         }
         catch(Exception ex) {
@@ -40,7 +43,11 @@ public class Server {
     }
 }
 
-class ServerThread implements Runnable {
+/*
+class ServerTask
+    describe the task of the server.
+ */
+class ServerTask implements Runnable {
     private Socket socket;
     private int id;
     private Database db;
@@ -53,10 +60,10 @@ class ServerThread implements Runnable {
     private ObjectInputStream objectFromClient;
     private ObjectOutputStream objectToClient;
 
-    public ServerThread(Socket socket,int id,Database db,List<Transfer> transfers,String defaultPath) {
+    public ServerTask(Socket socket,int id,List<Transfer> transfers,String defaultPath) {
         this.socket=socket;
         this.id=id;
-        this.db=db;
+        this.db=new Database();
         this.transfers=transfers;
         this.defaultPath=defaultPath;
         currentTransfer=null;
@@ -91,6 +98,7 @@ class ServerThread implements Runnable {
                 ioex.printStackTrace();
             }
         }
+        db.close();
         System.out.println(id+" is over.");
     }
 
@@ -118,8 +126,15 @@ class ServerThread implements Runnable {
     }
 
     private void readAMessage() throws Exception {
+        //close database connection when wait for client
+        db.close();
+
         request=(Message)objectFromClient.readObject();
         System.out.println(request.toString());
+
+        //a new message comes, establish database connection
+        db=new Database();
+
         switch(request.type.charAt(0)) {
             //select translator
             case 's':

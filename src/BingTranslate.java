@@ -12,6 +12,10 @@ import java.util.Iterator;
 /**
  * Created by Eric on 2016/11/25.
  */
+/*
+class BingTranslate
+    get and resolve the data Bing API provided.
+ */
 public class BingTranslate extends Translator{
     public BingTranslate(int votes) {
         name="Bing";

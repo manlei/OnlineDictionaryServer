@@ -12,6 +12,10 @@ import java.util.Iterator;
 /**
  * Created by Eric on 2016/11/25.
  */
+/*
+class JinshanTranslate
+    get and resolve the data Jinshan API provided.
+ */
 public class JinshanTranslate extends Translator{
     public JinshanTranslate(int votes) {
         name="Jinshan";

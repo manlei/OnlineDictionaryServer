@@ -5,7 +5,10 @@ import java.util.List;
 /**
  * Created by Eric on 2016/11/25.
  */
-//the class to transport translation between client and server
+/*
+class WORD
+    define the translation format transferred between the server and the client.
+ */
 public class WORD implements Serializable{
     public String translator;
     public String word;

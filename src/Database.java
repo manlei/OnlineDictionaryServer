@@ -3,11 +3,17 @@ import java.sql.*;
 /**
  * Created by Eric on 2016/12/6.
  */
+/*
+class Database
+    encapsulate the database operations.
+ */
 public class Database {
-    private String driver="com.mysql.jdbc.Driver";
-    private String url="jdbc:mysql://localhost:3306/dictionary?"+"user=dict&password=dict1234&useUnicode=true&characterEncoding=utf8";
+    private static final String driver="com.mysql.jdbc.Driver";
+    private static final String url="jdbc:mysql://localhost:3306/dictionary?"+"user=dict&password=dict1234&useUnicode=true&characterEncoding=utf8";
     private Connection conn=null;
     private Statement stmt;
+
+    //establish database connection
     public Database() {
         try {
             Class.forName(driver);
@@ -19,10 +25,13 @@ public class Database {
         }
     }
 
+    //close database connection
     public void close() {
         try {
-            stmt.close();
-            conn.close();
+            if(!stmt.isClosed())
+                stmt.close();
+            if(!conn.isClosed())
+                conn.close();
         }
         catch (Exception ex) {
             ex.printStackTrace();
@@ -288,6 +297,7 @@ public class Database {
         return result;
     }
 
+    //choose translators
     public boolean setEnableBing(String name,boolean arg) {
         boolean result=false;
         try {
@@ -339,6 +349,7 @@ public class Database {
         return result;
     }
 
+    //get which translators are chosen
     public boolean getEnableBing(String name) {
         boolean result=false;
         try {
@@ -394,6 +405,7 @@ public class Database {
         return result;
     }
 
+    //get online users
     public String getOnlineUsers(String name) {
         StringBuilder sb=new StringBuilder();
         try {
